@@ -1,0 +1,33 @@
+# robots.txt for fuel.programmersingh.dev
+# Allow all web search engines and AI answer engines to index and summarize Fuel
+
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Explicitly welcome AI Answer Engines (Perplexity, ChatGPT, Gemini, Claude, Copilot)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+Sitemap: https://fuel.programmersingh.dev/sitemap.xml

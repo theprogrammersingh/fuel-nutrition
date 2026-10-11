@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" style="background:#09090b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bg-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#09090b" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#0d1117" stop-opacity="1"/>
+    </linearGradient>
+
+    <radialGradient id="emerald-glow" cx="85%" cy="20%" r="55%">
+      <stop offset="0%" stop-color="#059669" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#059669" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="amber-glow" cx="15%" cy="85%" r="45%">
+      <stop offset="0%" stop-color="#d97706" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#d97706" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="card-border" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3f3f46"/>
+      <stop offset="100%" stop-color="#27272a"/>
+    </linearGradient>
+
+    <linearGradient id="pro-bar" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+
+    <!-- Subtle Dot Grid Pattern -->
+    <pattern id="grid-dots" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#27272a" fill-opacity="0.5"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg-glow)"/>
+  <rect width="1200" height="630" fill="url(#grid-dots)"/>
+  <rect width="1200" height="630" fill="url(#emerald-glow)"/>
+  <rect width="1200" height="630" fill="url(#amber-glow)"/>
+
+  <!-- Top Brand Navigation Bar -->
+  <g transform="translate(80, 56)">
+    <!-- Brand Icon -->
+    <rect width="56" height="56" rx="14" fill="#18181b" stroke="#3f3f46" stroke-width="1.5"/>
+    <text x="28" y="38" font-size="28" font-weight="800" fill="#ffffff" text-anchor="middle">F</text>
+    <circle cx="46" cy="46" r="6" fill="#059669"/>
+
+    <!-- Brand Name -->
+    <text x="72" y="38" font-size="32" font-weight="700" fill="#ffffff" letter-spacing="-0.5">Fuel</text>
+
+    <!-- Status Badge -->
+    <rect x="156" y="16" width="138" height="26" rx="13" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+    <circle cx="170" cy="29" r="4" fill="#059669"/>
+    <text x="182" y="33" font-size="11" font-weight="700" fill="#a1a1aa" letter-spacing="1">LOCAL READY</text>
+
+    <!-- Domain Pill -->
+    <rect x="850" y="14" width="190" height="30" rx="15" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+    <text x="945" y="34" font-size="12" font-weight="600" fill="#71717a" text-anchor="middle" font-family="ui-monospace,Menlo,Monaco,monospace">fuel.programmersingh.dev</text>
+  </g>
+
+  <!-- Left Hero Column -->
+  <g transform="translate(80, 160)">
+    <!-- Category Pill -->
+    <rect width="320" height="28" rx="14" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+    <text x="16" y="19" font-size="11" font-weight="700" fill="#10b981" letter-spacing="1.2">GEMINI MULTIMODAL VISION · PWA</text>
+
+    <!-- Main Title -->
+    <text x="0" y="85" font-size="52" font-weight="800" fill="#ffffff" letter-spacing="-1.5">Radical Reductive</text>
+    <text x="0" y="145" font-size="52" font-weight="800" fill="#ffffff" letter-spacing="-1.5">Nutrition Intelligence</text>
+
+    <!-- Subtitle -->
+    <text x="0" y="200" font-size="20" font-weight="400" fill="#a1a1aa" letter-spacing="-0.2">
+      Point your camera at any meal to estimate calories and protein
+    </text>
+    <text x="0" y="230" font-size="20" font-weight="400" fill="#a1a1aa" letter-spacing="-0.2">
+      in seconds. Zero subscriptions, 100% private on your device.
+    </text>
+
+    <!-- Key Feature Badges Grid -->
+    <g transform="translate(0, 275)">
+      <!-- Badge 1 -->
+      <rect x="0" y="0" width="220" height="42" rx="10" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+      <circle cx="22" cy="21" r="5" fill="#059669"/>
+      <text x="36" y="26" font-size="13" font-weight="600" fill="#e4e4e7">Instant Plate Vision</text>
+
+      <!-- Badge 2 -->
+      <rect x="232" y="0" width="230" height="42" rx="10" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+      <circle cx="254" cy="21" r="5" fill="#10b981"/>
+      <text x="268" y="26" font-size="13" font-weight="600" fill="#e4e4e7">Gemini 3.8 Flash AI</text>
+
+      <!-- Badge 3 -->
+      <rect x="0" y="52" width="220" height="42" rx="10" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+      <circle cx="22" cy="73" r="5" fill="#059669"/>
+      <text x="36" y="78" font-size="13" font-weight="600" fill="#e4e4e7">100% Free &amp; Private</text>
+
+      <!-- Badge 4 -->
+      <rect x="232" y="52" width="230" height="42" rx="10" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+      <circle cx="254" cy="73" r="5" fill="#3b82f6"/>
+      <text x="268" y="78" font-size="13" font-weight="600" fill="#e4e4e7">iOS &amp; Android PWA</text>
+    </g>
+  </g>
+
+  <!-- Right Dashboard Card Mockup -->
+  <g transform="translate(680, 150)">
+    <!-- Card Frame -->
+    <rect width="440" height="380" rx="20" fill="#131316" stroke="url(#card-border)" stroke-width="1.5" filter="drop-shadow(0 20px 30px rgba(0,0,0,0.6))"/>
+
+    <!-- Card Header -->
+    <g transform="translate(28, 28)">
+      <text x="0" y="16" font-size="11" font-weight="700" fill="#71717a" letter-spacing="1.5">DAILY ENERGY TARGET</text>
+      <rect x="290" y="0" width="90" height="24" rx="12" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+      <text x="335" y="16" font-size="11" font-weight="700" fill="#10b981" text-anchor="middle">CALIBRATED</text>
+
+      <!-- Stat Values -->
+      <text x="0" y="68" font-size="44" font-weight="800" fill="#ffffff" letter-spacing="-1">2,000</text>
+      <text x="135" y="66" font-size="20" font-weight="500" fill="#71717a">kcal</text>
+
+      <!-- Linear Rails -->
+      <g transform="translate(0, 95)">
+        <rect width="384" height="8" rx="4" fill="#27272a"/>
+        <rect width="260" height="8" rx="4" fill="#e4e4e7"/>
+      </g>
+
+      <!-- Protein Target Section -->
+      <g transform="translate(0, 130)">
+        <text x="0" y="16" font-size="11" font-weight="700" fill="#71717a" letter-spacing="1.5">DAILY PROTEIN TARGET</text>
+        <text x="384" y="16" font-size="12" font-weight="600" fill="#10b981" text-anchor="end">Target Hit · 140g</text>
+
+        <!-- Protein Bar -->
+        <g transform="translate(0, 30)">
+          <rect width="384" height="8" rx="4" fill="#27272a"/>
+          <rect width="384" height="8" rx="4" fill="url(#pro-bar)"/>
+        </g>
+      </g>
+
+      <!-- AI Plate Scanner Banner -->
+      <g transform="translate(0, 205)">
+        <rect width="384" height="88" rx="14" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+        <!-- Scanner Icon Circle -->
+        <rect x="16" y="18" width="52" height="52" rx="12" fill="#27272a"/>
+        <!-- Camera SVG inside -->
+        <circle cx="42" cy="44" r="10" fill="none" stroke="#e4e4e7" stroke-width="2.5"/>
+        <circle cx="42" cy="44" r="4" fill="#10b981"/>
+
+        <text x="82" y="38" font-size="15" font-weight="700" fill="#ffffff">Instant Plate Scanner</text>
+        <text x="82" y="58" font-size="12" font-weight="400" fill="#a1a1aa">Powered by Gemini 3.8 Flash Core</text>
+
+        <rect x="295" y="26" width="72" height="36" rx="10" fill="#059669"/>
+        <text x="331" y="49" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">SNAP</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Bottom Accent Line -->
+  <rect x="0" y="626" width="1200" height="4" fill="url(#pro-bar)"/>
+</svg>

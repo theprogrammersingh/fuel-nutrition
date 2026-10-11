@@ -1,9 +1,9 @@
-const CACHE_NAME = 'fuel-pwa-v3';
+const CACHE_NAME = 'fuel-pwa-v4';
 const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon.svg'
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/icon.svg'
 ];
 
 self.addEventListener('install', (event) => {
@@ -52,7 +52,7 @@ self.addEventListener('fetch', (event) => {
         return response;
       }).catch(() => {
         if (event.request.mode === 'navigate') {
-          return caches.match('./') || caches.match('./index.html');
+          return caches.match('/') || caches.match('/index.html');
         }
       });
     })
