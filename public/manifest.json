@@ -2,14 +2,15 @@
   "name": "Fuel — Minimal Nutrition PWA",
   "short_name": "Fuel",
   "description": "Radical reductive nutrition intelligence powered by Gemini Multimodal Vision",
-  "start_url": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f9f9f9",
   "theme_color": "#09090b",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "./icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

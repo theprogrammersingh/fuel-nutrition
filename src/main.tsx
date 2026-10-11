@@ -10,8 +10,9 @@ if (
   !window.location.hostname.includes('127.0.0.1')
 ) {
   window.addEventListener('load', () => {
+    const swPath = `${(import.meta as any).env?.BASE_URL || '/'}sw.js`;
     navigator.serviceWorker
-      .register('/sw.js')
+      .register(swPath)
       .then((registration) => {
         console.log('Fuel PWA ServiceWorker registered with scope:', registration.scope);
       })
