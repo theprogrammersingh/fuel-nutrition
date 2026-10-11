@@ -57,13 +57,10 @@ export const Header: React.FC<HeaderProps> = ({ onRefreshSync, onOpenSettings })
           
           <button
             onClick={onOpenSettings}
-            aria-label="Settings and Profile"
-            className="relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-subtle active:scale-95 transition-all"
+            aria-label="Settings"
+            className="w-10 h-10 flex items-center justify-center text-text-secondary hover:text-text-primary rounded-full hover:bg-surface-subtle active:scale-95 transition-all"
           >
-            <div className="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-text-secondary font-medium text-xs border border-border-hairline">
-              <span className="material-symbols-outlined text-[18px]">person</span>
-            </div>
-            <span className="absolute bottom-1.5 right-1.5 w-2 h-2 rounded-full bg-accent-success ring-2 ring-surface"></span>
+            <span className="material-symbols-outlined text-[20px]">settings</span>
           </button>
         </div>
       </div>

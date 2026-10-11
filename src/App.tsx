@@ -190,6 +190,22 @@ export const App: React.FC = () => {
         onUndo={lastDeletedMeal ? handleUndoDelete : undefined}
       />
 
+      {/* Floating Action Button (FAB) for Camera Scan - Hovers on the right */}
+      {activeTab !== 'scan' && (
+        <aside
+          aria-label="Quick scan action"
+          className="fixed bottom-20 inset-x-0 max-w-lg mx-auto px-4 flex justify-end pointer-events-none z-40 pb-safe"
+        >
+          <button
+            onClick={() => setActiveTab('scan')}
+            aria-label="Scan food photo"
+            className="pointer-events-auto w-14 h-14 rounded-full bg-accent-neutral-bar text-white flex items-center justify-center shadow-[0px_6px_20px_rgba(9,9,11,0.28)] hover:shadow-2xl active:scale-95 transition-all hover:bg-black focus:outline-hidden"
+          >
+            <span className="material-symbols-outlined text-[26px]">photo_camera</span>
+          </button>
+        </aside>
+      )}
+
       {/* Bottom Navigation Dock (Except during fullscreen camera scanner) */}
       {activeTab !== 'scan' && (
         <BottomNav
