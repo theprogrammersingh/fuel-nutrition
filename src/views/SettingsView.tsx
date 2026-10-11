@@ -28,7 +28,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const [apiKey, setApiKey] = useState(settings.geminiApiKey);
   const [selectedModel, setSelectedModel] = useState(settings.selectedModel);
-  const [simulationMode, setSimulationMode] = useState(settings.simulationMode);
   const [showApiKey, setShowApiKey] = useState(false);
   const [isTestingKey, setIsTestingKey] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -55,7 +54,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onUpdateSettings({
       geminiApiKey: apiKey.trim(),
       selectedModel: selectedModel.trim(),
-      simulationMode: simulationMode,
+      simulationMode: false,
     });
     setSavedNotification(true);
     setTimeout(() => setSavedNotification(false), 2000);
@@ -301,26 +300,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </span>
         </div>
 
-        {/* Fast Demo Mode Toggle */}
-        <div className="flex items-center justify-between pt-1 border-t border-border-hairline">
-          <div className="flex flex-col">
-            <span className="text-xs font-semibold text-text-primary">Instant Demo Simulation</span>
-            <span className="text-[11px] text-text-muted">Use offline-ready realistic food responses</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setSimulationMode(!simulationMode)}
-            className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${
-              simulationMode ? 'bg-accent-neutral-bar' : 'bg-zinc-200'
-            }`}
-          >
-            <div
-              className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                simulationMode ? 'translate-x-5' : 'translate-x-0'
-              }`}
-            ></div>
-          </button>
-        </div>
 
         {/* Test Result Message */}
         {testResult && (

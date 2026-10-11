@@ -46,81 +46,18 @@ export const DEFAULT_SETTINGS: AppSettings = {
   simulationMode: false,
 };
 
-// Stitch Design Pre-seeded Meals matching the Kinetic Fuel mockups
-export const SEED_MEALS: MealEntry[] = [
-  {
-    id: 'seed-1',
-    name: 'Avocado Toast & Boiled Eggs',
-    description: '1 slice sourdough, 2 eggs',
-    mealType: 'breakfast',
-    timestamp: '08:30 AM',
-    date: new Date().toISOString().split('T')[0],
-    calories: 420,
-    protein: 22,
-    carbs: 28,
-    fat: 26,
-    portionMultiplier: 1.0,
-    confidenceScore: 0.94,
-    imageUrl: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'seed-2',
-    name: 'Grilled Chicken Salad',
-    description: 'Vinaigrette, 160g chicken, greens',
-    mealType: 'lunch',
-    timestamp: '01:15 PM',
-    date: new Date().toISOString().split('T')[0],
-    calories: 380,
-    protein: 34,
-    carbs: 12,
-    fat: 18,
-    portionMultiplier: 1.0,
-    confidenceScore: 0.96,
-    imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'seed-3',
-    name: 'Greek Yogurt & Berries',
-    description: '170g nonfat yogurt, blueberries, chia',
-    mealType: 'snack',
-    timestamp: '04:45 PM',
-    date: new Date().toISOString().split('T')[0],
-    calories: 180,
-    protein: 18,
-    carbs: 22,
-    fat: 2,
-    portionMultiplier: 1.0,
-    confidenceScore: 0.98,
-    imageUrl: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'seed-4',
-    name: 'Paneer Bhurji & Multigrain Rotis',
-    description: 'Scrambled cottage cheese, turmeric, 2 rotis',
-    mealType: 'dinner',
-    timestamp: '07:30 PM',
-    date: new Date().toISOString().split('T')[0],
-    calories: 570,
-    protein: 24,
-    carbs: 48,
-    fat: 32,
-    portionMultiplier: 1.0,
-    confidenceScore: 0.92,
-    imageUrl: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=400&auto=format&fit=crop&q=80',
-  }
-];
+export const SEED_MEALS: MealEntry[] = [];
 
 export function getMeals(): MealEntry[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.MEALS);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.MEALS, JSON.stringify(SEED_MEALS));
-      return SEED_MEALS;
+      return [];
     }
     return JSON.parse(raw);
   } catch (err) {
     console.error('Failed to load meals from localStorage', err);
-    return SEED_MEALS;
+    return [];
   }
 }
 

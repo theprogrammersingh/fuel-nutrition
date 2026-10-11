@@ -8,20 +8,6 @@ interface CameraViewProps {
   onScanComplete: (imageSrc: string, result: GeminiInferenceResult) => void;
 }
 
-const SAMPLE_DEMO_PHOTOS = [
-  {
-    title: 'Paneer Bhurji & Rotis',
-    url: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=80',
-  },
-  {
-    title: 'Grilled Chicken & Greens',
-    url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80',
-  },
-  {
-    title: 'Avocado Toast & Eggs',
-    url: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=600&auto=format&fit=crop&q=80',
-  },
-];
 
 export const CameraView: React.FC<CameraViewProps> = ({ onCancel, onScanComplete }) => {
   const [streamActive, setStreamActive] = useState(false);
@@ -158,12 +144,6 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCancel, onScanComplete
       processImage(dataUrl);
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleSelectSample = (sampleUrl: string) => {
-    stopStream();
-    setPreviewImage(sampleUrl);
-    processImage(sampleUrl);
   };
 
   const processImage = async (imageSrc: string) => {
@@ -354,26 +334,6 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCancel, onScanComplete
 
       {/* Bottom Controls */}
       <div className="pb-safe px-gutter z-20 flex flex-col gap-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent pt-4">
-        {/* Sample Demo Meals Selector */}
-        <div className="flex flex-col gap-1.5">
-          <span className="font-label-xs text-[11px] text-white/50 uppercase tracking-wider text-center">
-            Quick Test Dishes
-          </span>
-          <div className="flex items-center justify-center gap-2 overflow-x-auto py-1">
-            {SAMPLE_DEMO_PHOTOS.map((sample, i) => (
-              <button
-                key={i}
-                type="button"
-                disabled={isAnalyzing}
-                onClick={() => handleSelectSample(sample.url)}
-                className="px-2.5 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white text-[11px] font-medium backdrop-blur-md border border-white/10 whitespace-nowrap active:scale-95 transition-all"
-              >
-                {sample.title}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Shutter / Capture Row */}
         <div className="flex items-center justify-around py-2">
           {/* Gallery / File Picker */}

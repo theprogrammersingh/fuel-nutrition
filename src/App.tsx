@@ -10,7 +10,6 @@ import {
   getSettings,
   saveSettings,
   clearAllData,
-  SEED_MEALS
 } from './services/storage';
 import { calculateMacroNudge } from './services/recommendations';
 import { Header } from './components/Header';
@@ -117,7 +116,7 @@ export const App: React.FC = () => {
   const handleClearAll = () => {
     if (window.confirm('Are you sure you want to clear all meal logs and custom settings?')) {
       clearAllData();
-      setMeals(SEED_MEALS);
+      setMeals([]);
       setGoals(getGoals());
       setSettings(getSettings());
       setToastMessage('Reset to clean default state');
@@ -161,6 +160,7 @@ export const App: React.FC = () => {
             initialImage={scannedImage}
             onConfirmLog={handleConfirmLogFromReview}
             onCancel={() => setActiveTab('today')}
+            onOpenScan={() => setActiveTab('scan')}
           />
         )}
 

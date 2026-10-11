@@ -6,6 +6,7 @@ interface ReviewViewProps {
   initialImage: string | null;
   onConfirmLog: (meal: MealEntry) => void;
   onCancel: () => void;
+  onOpenScan?: () => void;
 }
 
 export const ReviewView: React.FC<ReviewViewProps> = ({
@@ -13,21 +14,30 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
   initialImage,
   onConfirmLog,
   onCancel,
+  onOpenScan,
 }) => {
-  // Fallback defaults if no scan has happened yet
-  const fallbackResult: GeminiInferenceResult = {
-    dish_name: 'Paneer Bhurji with 2 Rotis',
-    portion_estimate: '1 bowl scrambled paneer + 2 rotis',
-    calories: 480,
-    protein: 24,
-    carbs: 42,
-    fat: 22,
-    confidence_score: 0.96,
-    ingredients: ['Cottage Cheese', 'Whole Wheat Rotis', 'Onions & Tomatoes', 'Ghee / Spices']
-  };
+  if (!initialResult) {
+    return (
+      <div className="flex flex-col w-full max-w-lg mx-auto px-gutter pb-28 pt-12 items-center justify-center text-center gap-3">
+        <div className="w-16 h-16 rounded-full bg-surface-subtle flex items-center justify-center text-text-muted mb-1">
+          <span className="material-symbols-outlined text-[32px]">photo_camera</span>
+        </div>
+        <h2 className="font-headline-lg text-lg font-semibold text-text-primary">No Meal to Review Yet</h2>
+        <p className="font-body-md text-body-md text-text-secondary max-w-xs">
+          Take a photo of your meal or upload an image to analyze and review its nutritional breakdown.
+        </p>
+        <button
+          onClick={onOpenScan || onCancel}
+          className="mt-3 px-5 py-2.5 bg-accent-neutral-bar text-white rounded-xl text-sm font-medium active:scale-95 transition-transform shadow-xs"
+        >
+          Scan Food Photo
+        </button>
+      </div>
+    );
+  }
 
-  const currentResult = initialResult || fallbackResult;
-  const currentImage = initialImage || 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=80';
+  const currentResult = initialResult;
+  const currentImage = initialImage || '';
 
   const [dishName, setDishName] = useState(currentResult.dish_name);
   const [mealType, setMealType] = useState<MealType>('lunch');

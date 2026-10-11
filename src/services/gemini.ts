@@ -13,50 +13,6 @@ Analyze the provided food image and return a structured JSON response estimating
 Keep estimates realistic and grounded based on typical restaurant and home culinary standards.
 Return ONLY valid JSON matching this schema without markdown fences.`;
 
-// Sample realistic demo responses for instant testing or offline demo mode
-const SAMPLE_DEMO_MEALS: GeminiInferenceResult[] = [
-  {
-    dish_name: 'Paneer Bhurji with 2 Rotis',
-    portion_estimate: '1 bowl scrambled paneer (~200g) + 2 whole wheat rotis',
-    calories: 480,
-    protein: 24,
-    carbs: 42,
-    fat: 22,
-    confidence_score: 0.96,
-    ingredients: ['Cottage Cheese (Paneer)', 'Whole Wheat Flour', 'Onions & Tomatoes', 'Ghee / Oil', 'Spices']
-  },
-  {
-    dish_name: 'Grilled Herb Chicken & Steamed Broccoli',
-    portion_estimate: '1 plate (~320g total, 180g chicken breast)',
-    calories: 390,
-    protein: 44,
-    carbs: 10,
-    fat: 14,
-    confidence_score: 0.98,
-    ingredients: ['Chicken Breast', 'Broccoli Florets', 'Olive Oil', 'Garlic & Herbs']
-  },
-  {
-    dish_name: 'Sourdough Avocado Toast with Poached Eggs',
-    portion_estimate: '1 slice artisanal sourdough, 1/2 avocado, 2 eggs',
-    calories: 410,
-    protein: 21,
-    carbs: 30,
-    fat: 24,
-    confidence_score: 0.93,
-    ingredients: ['Sourdough Bread', 'Avocado', 'Eggs', 'Chili Flakes & Sea Salt']
-  },
-  {
-    dish_name: 'Greek Yogurt Bowl with Wild Blueberries & Honey',
-    portion_estimate: '1 bowl (~220g nonfat Greek yogurt, 50g berries)',
-    calories: 210,
-    protein: 20,
-    carbs: 26,
-    fat: 2,
-    confidence_score: 0.97,
-    ingredients: ['Strained Nonfat Greek Yogurt', 'Fresh Blueberries', 'Raw Honey', 'Chia Seeds']
-  }
-];
-
 export async function testGeminiApiKey(apiKey: string, modelName: string): Promise<{ success: boolean; message: string }> {
   if (!apiKey || apiKey.trim() === '') {
     return { success: false, message: 'Please enter a valid API key.' };
@@ -98,13 +54,8 @@ export async function analyzeMealImage(
   const apiKey = settings.geminiApiKey?.trim();
   const model = settings.selectedModel?.trim() || 'gemini-3.8-flash';
 
-  // If simulation mode is explicitly enabled or no API key is provided, use realistic simulation
-  if (settings.simulationMode || !apiKey) {
-    // Artificial realistic delay (1.2 - 1.8 seconds)
-    await new Promise(r => setTimeout(r, 1400));
-    // Pick sample based on image size or random
-    const idx = Math.floor(Math.random() * SAMPLE_DEMO_MEALS.length);
-    return SAMPLE_DEMO_MEALS[idx];
+  if (!apiKey) {
+    throw new Error('Gemini API Key is required. Please set your API key in the Settings tab.');
   }
 
   // Clean base64 string if it contains data prefix
@@ -132,47 +83,36 @@ export async function analyzeMealImage(
     }
   };
 
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      console.warn('Gemini API call failed, falling back to simulated inference:', err);
-      // Fallback gracefully so user experience doesn't break
-      return SAMPLE_DEMO_MEALS[0];
-    }
-
-    const data = await response.json();
-    const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!candidateText) {
-      throw new Error('No candidate content received from Gemini');
-    }
-
-    // Parse structured JSON
-    const parsed: GeminiInferenceResult = JSON.parse(candidateText);
-
-    // Validate expected fields
-    return {
-      dish_name: parsed.dish_name || 'Logged Meal',
-      portion_estimate: parsed.portion_estimate || 'Standard Serving',
-      calories: Math.round(Number(parsed.calories) || 350),
-      protein: Math.round(Number(parsed.protein) || 25),
-      carbs: Math.round(Number(parsed.carbs) || 30),
-      fat: Math.round(Number(parsed.fat) || 12),
-      confidence_score: Math.min(1, Math.max(0.5, Number(parsed.confidence_score) || 0.92)),
-      ingredients: parsed.ingredients || []
-    };
-  } catch (error) {
-    console.error('Gemini vision analysis error:', error);
-    // Return sample meal with a note
-    return {
-      ...SAMPLE_DEMO_MEALS[0],
-      dish_name: 'Scanned Meal (Offline / Fallback)'
-    };
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    const errorMsg = errData?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
+    throw new Error(`Gemini analysis error: ${errorMsg}`);
   }
+
+  const data = await response.json();
+  const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+  if (!candidateText) {
+    throw new Error('No content returned from Gemini Vision model.');
+  }
+
+  // Parse structured JSON
+  const parsed: GeminiInferenceResult = JSON.parse(candidateText);
+
+  return {
+    dish_name: parsed.dish_name || 'Logged Meal',
+    portion_estimate: parsed.portion_estimate || 'Standard Serving',
+    calories: Math.round(Number(parsed.calories) || 0),
+    protein: Math.round(Number(parsed.protein) || 0),
+    carbs: Math.round(Number(parsed.carbs) || 0),
+    fat: Math.round(Number(parsed.fat) || 0),
+    confidence_score: Math.min(1, Math.max(0.1, Number(parsed.confidence_score) || 0.9)),
+    ingredients: parsed.ingredients || []
+  };
 }
