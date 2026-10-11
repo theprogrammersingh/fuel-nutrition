@@ -1,6 +1,7 @@
 import React from 'react';
 import { MealEntry, DailyGoals, RecommendationItem, NudgeState } from '../types';
 import { NudgeBanner } from '../components/NudgeBanner';
+import { getDeviceInfo } from '../services/pwa';
 
 interface TodayViewProps {
   meals: MealEntry[];
@@ -9,6 +10,7 @@ interface TodayViewProps {
   onQuickLog: (item: RecommendationItem) => void;
   onDeleteMeal: (id: string) => void;
   onOpenScan: () => void;
+  onOpenInstallGuide?: () => void;
 }
 
 export const TodayView: React.FC<TodayViewProps> = ({
@@ -18,7 +20,10 @@ export const TodayView: React.FC<TodayViewProps> = ({
   onQuickLog,
   onDeleteMeal,
   onOpenScan,
+  onOpenInstallGuide,
 }) => {
+  const [bannerDismissed, setBannerDismissed] = React.useState(false);
+  const deviceInfo = getDeviceInfo();
   const todayStr = new Date().toISOString().split('T')[0];
   const todayMeals = meals.filter(m => m.date === todayStr);
 
@@ -54,6 +59,38 @@ export const TodayView: React.FC<TodayViewProps> = ({
           <span>{todayFormatted}</span>
         </div>
       </div>
+
+      {/* Install Fuel Prompt Banner (When running in browser) */}
+      {!deviceInfo.isStandalone && !bannerDismissed && (
+        <div className="p-3.5 rounded-xl bg-surface-card border border-border-hairline shadow-xs flex items-center justify-between gap-3 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-accent-neutral-bar text-white flex items-center justify-center shrink-0 shadow-xs">
+              <span className="material-symbols-outlined text-[18px]">add_to_home_screen</span>
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-semibold text-text-primary truncate">Install Fuel on Device</span>
+              <span className="text-[11px] text-text-muted truncate">
+                {deviceInfo.isIOS ? 'Tap Share → Add to Home Screen' : 'Add to Home screen for 1-tap logging'}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={onOpenInstallGuide}
+              className="px-2.5 py-1 rounded-lg bg-accent-neutral-bar text-white text-[11px] font-medium hover:bg-black active:scale-95 transition-all shadow-xs"
+            >
+              Install
+            </button>
+            <button
+              onClick={() => setBannerDismissed(true)}
+              aria-label="Dismiss install banner"
+              className="p-1 text-text-muted hover:text-text-primary rounded"
+            >
+              <span className="material-symbols-outlined text-[16px]">close</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Primary Target Card: Radical Reductive Macro Balance */}
       <section className="bg-surface-card rounded-xl p-space-lg border border-border-hairline shadow-sm flex flex-col gap-space-md">

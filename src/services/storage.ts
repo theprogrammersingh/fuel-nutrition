@@ -4,6 +4,7 @@ const STORAGE_KEYS = {
   MEALS: 'fuel_meals_v1',
   GOALS: 'fuel_goals_v1',
   SETTINGS: 'fuel_settings_v1',
+  ONBOARDED: 'fuel_onboarded_v1',
 };
 
 export const AVAILABLE_MODELS = [
@@ -141,4 +142,21 @@ export function clearAllData(): void {
   localStorage.removeItem(STORAGE_KEYS.MEALS);
   localStorage.removeItem(STORAGE_KEYS.GOALS);
   localStorage.removeItem(STORAGE_KEYS.SETTINGS);
+  localStorage.removeItem(STORAGE_KEYS.ONBOARDED);
+}
+
+export function isOnboarded(): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.ONBOARDED) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export function setOnboarded(value: boolean): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.ONBOARDED, value ? 'true' : 'false');
+  } catch (err) {
+    console.error('Failed to save onboarding state', err);
+  }
 }

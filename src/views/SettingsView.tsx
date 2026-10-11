@@ -3,6 +3,8 @@ import { DailyGoals, AppSettings, DietaryFocus } from '../types';
 import { AVAILABLE_MODELS, exportDataAsJson } from '../services/storage';
 import { testGeminiApiKey } from '../services/gemini';
 
+import { getDeviceInfo } from '../services/pwa';
+
 interface SettingsViewProps {
   goals: DailyGoals;
   settings: AppSettings;
@@ -11,6 +13,8 @@ interface SettingsViewProps {
   onResetToday: () => void;
   onClearAll: () => void;
   mealCount: number;
+  onOpenInstallGuide: () => void;
+  onOpenWelcomeFlow: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -21,7 +25,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onResetToday,
   onClearAll,
   mealCount,
+  onOpenInstallGuide,
+  onOpenWelcomeFlow,
 }) => {
+  const deviceInfo = getDeviceInfo();
   const [calorieTarget, setCalorieTarget] = useState(goals.calories);
   const [proteinTarget, setProteinTarget] = useState(goals.protein);
   const [dietaryFocus, setDietaryFocus] = useState<DietaryFocus>(goals.dietaryFocus);
@@ -346,7 +353,57 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </section>
 
-      {/* SECTION 4: DATA & STORAGE MANAGEMENT */}
+      {/* SECTION 4: APP INSTALLATION & PWA */}
+      <section className="p-space-lg rounded-xl bg-surface-card border border-border-hairline shadow-sm flex flex-col gap-space-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <span className="material-symbols-outlined text-[18px] text-accent-neutral-bar">
+              install_mobile
+            </span>
+            <span className="font-label-xs text-label-xs text-text-primary uppercase tracking-wider font-semibold">
+              App Installation & Device
+            </span>
+          </div>
+          {deviceInfo.isStandalone ? (
+            <span className="font-mono-data text-xs text-accent-success font-medium flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent-success"></span>
+              Installed
+            </span>
+          ) : (
+            <span className="font-mono-data text-xs text-text-muted font-medium">Browser Mode</span>
+          )}
+        </div>
+
+        <p className="text-xs text-text-secondary leading-relaxed">
+          {deviceInfo.isStandalone
+            ? 'Fuel is installed on your device with full standalone camera, offline cache, and display permissions.'
+            : 'Add Fuel directly to your Home Screen or Dock for full-screen launching, offline caching, and faster camera scanning.'}
+        </p>
+
+        <div className="flex flex-col gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onOpenInstallGuide}
+            className="w-full py-2.5 px-3 rounded-lg bg-accent-neutral-bar text-white text-xs font-medium flex items-center justify-center gap-2 hover:bg-black active:scale-98 transition-all shadow-xs"
+          >
+            <span className="material-symbols-outlined text-[16px]">
+              {deviceInfo.isStandalone ? 'visibility' : 'add_to_home_screen'}
+            </span>
+            <span>{deviceInfo.isStandalone ? 'View Installation Guide' : 'Install Fuel App (Guide & 1-Click)'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenWelcomeFlow}
+            className="w-full py-2 px-3 rounded-lg bg-surface-subtle hover:bg-zinc-100 text-text-secondary hover:text-text-primary text-xs font-medium flex items-center justify-center gap-1.5 border border-border-hairline active:scale-98 transition-all"
+          >
+            <span className="material-symbols-outlined text-[15px]">help_outline</span>
+            <span>Replay Welcome Tour & Setup</span>
+          </button>
+        </div>
+      </section>
+
+      {/* SECTION 5: DATA & STORAGE MANAGEMENT */}
       <section className="p-space-lg rounded-xl bg-surface-card border border-border-hairline shadow-sm flex flex-col gap-space-sm">
         <span className="font-label-xs text-label-xs text-text-muted uppercase tracking-wider">
           Storage & Offline Data

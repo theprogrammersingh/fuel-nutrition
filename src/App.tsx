@@ -10,11 +10,15 @@ import {
   getSettings,
   saveSettings,
   clearAllData,
+  isOnboarded,
+  setOnboarded,
 } from './services/storage';
 import { calculateMacroNudge } from './services/recommendations';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { Toast } from './components/Toast';
+import { WelcomeFlowModal } from './components/WelcomeFlowModal';
+import { InstallModal } from './components/InstallModal';
 import { TodayView } from './views/TodayView';
 import { CameraView } from './views/CameraView';
 import { ReviewView } from './views/ReviewView';
@@ -25,6 +29,10 @@ export const App: React.FC = () => {
   const [meals, setMeals] = useState<MealEntry[]>(getMeals);
   const [goals, setGoals] = useState(getGoals);
   const [settings, setSettings] = useState(getSettings);
+
+  // Welcome flow & Install modal state
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState(() => !isOnboarded());
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
 
   // Scanned item staged for Review
   const [scannedImage, setScannedImage] = useState<string | null>(null);
@@ -113,6 +121,19 @@ export const App: React.FC = () => {
     setToastMessage("Reset today's meals");
   };
 
+  const handleWelcomeComplete = (newApiKey: string, newModel: string) => {
+    const updated = {
+      ...settings,
+      geminiApiKey: newApiKey,
+      selectedModel: newModel,
+    };
+    setSettings(updated);
+    saveSettings(updated);
+    setOnboarded(true);
+    setIsWelcomeOpen(false);
+    setToastMessage('Welcome to Fuel! Ready to track your first meal.');
+  };
+
   const handleClearAll = () => {
     if (window.confirm('Are you sure you want to clear all meal logs and custom settings?')) {
       clearAllData();
@@ -144,6 +165,7 @@ export const App: React.FC = () => {
             onQuickLog={handleQuickLog}
             onDeleteMeal={handleDeleteMeal}
             onOpenScan={() => setActiveTab('scan')}
+            onOpenInstallGuide={() => setIsInstallModalOpen(true)}
           />
         )}
 
@@ -179,6 +201,8 @@ export const App: React.FC = () => {
             onResetToday={handleResetToday}
             onClearAll={handleClearAll}
             mealCount={meals.length}
+            onOpenInstallGuide={() => setIsInstallModalOpen(true)}
+            onOpenWelcomeFlow={() => setIsWelcomeOpen(true)}
           />
         )}
       </main>
@@ -188,6 +212,24 @@ export const App: React.FC = () => {
         message={toastMessage}
         onClose={() => setToastMessage(null)}
         onUndo={lastDeletedMeal ? handleUndoDelete : undefined}
+      />
+
+      {/* User Welcome & Setup Flow Wizard */}
+      <WelcomeFlowModal
+        isOpen={isWelcomeOpen}
+        initialApiKey={settings.geminiApiKey}
+        initialModel={settings.selectedModel}
+        onComplete={handleWelcomeComplete}
+        onDismiss={() => {
+          setOnboarded(true);
+          setIsWelcomeOpen(false);
+        }}
+      />
+
+      {/* Standalone Device Installation Guide Modal */}
+      <InstallModal
+        isOpen={isInstallModalOpen}
+        onClose={() => setIsInstallModalOpen(false)}
       />
 
       {/* Floating Action Button (FAB) for Camera Scan - Hovers on the right */}
