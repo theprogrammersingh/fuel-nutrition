@@ -3,8 +3,12 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 
-// Register Service Worker for PWA offline readiness
-if ('serviceWorker' in navigator && !window.location.hostname.includes('localhost')) {
+// Register Service Worker for PWA offline readiness in production only
+if (
+  'serviceWorker' in navigator &&
+  !window.location.hostname.includes('localhost') &&
+  !window.location.hostname.includes('127.0.0.1')
+) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('/sw.js')
