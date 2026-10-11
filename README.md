@@ -2,7 +2,8 @@
 
 > Radical reductive nutrition intelligence powered by Gemini Multimodal Vision.
 
-**Live App (GitHub Pages):** [https://theprogrammersingh.github.io/fuel-nutrition/](https://theprogrammersingh.github.io/fuel-nutrition/)  
+**Live App:** [https://fuel.programmersingh.dev/](https://fuel.programmersingh.dev/)  
+**GitHub Pages Fallback:** [https://theprogrammersingh.github.io/fuel-nutrition/](https://theprogrammersingh.github.io/fuel-nutrition/)  
 **Alternative Deployment (Firebase):** [https://fuel-nutrition-c920a7.web.app](https://fuel-nutrition-c920a7.web.app)
 
 ---
