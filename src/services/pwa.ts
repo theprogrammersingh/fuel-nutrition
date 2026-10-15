@@ -167,3 +167,136 @@ export async function triggerNativeInstall(): Promise<{ outcome: 'accepted' | 'd
     return { outcome: 'dismissed' };
   }
 }
+
+// ---------------------------------------------------------------------------
+// PWA Service Worker Update Management
+// ---------------------------------------------------------------------------
+
+let currentRegistration: ServiceWorkerRegistration | null = null;
+let waitingWorker: ServiceWorker | null = null;
+const updateListeners = new Set<(hasUpdate: boolean) => void>();
+let isUpdateAvailableState = false;
+
+export function isAppUpdateAvailable(): boolean {
+  return isUpdateAvailableState;
+}
+
+export function subscribeToAppUpdate(callback: (hasUpdate: boolean) => void): () => void {
+  updateListeners.add(callback);
+  callback(isUpdateAvailableState);
+  return () => updateListeners.delete(callback);
+}
+
+function notifyUpdateListeners(hasUpdate: boolean) {
+  isUpdateAvailableState = hasUpdate;
+  updateListeners.forEach((listener) => {
+    try {
+      listener(hasUpdate);
+    } catch (e) {
+      console.error('Error notifying update listener', e);
+    }
+  });
+}
+
+export function initServiceWorker(): void {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+    return;
+  }
+
+  window.addEventListener('load', () => {
+    const swPath = `${(import.meta as any).env?.BASE_URL || '/'}sw.js`;
+    navigator.serviceWorker
+      .register(swPath)
+      .then((registration) => {
+        currentRegistration = registration;
+        console.log('Fuel PWA ServiceWorker registered with scope:', registration.scope);
+
+        // 1. Check if there is already a waiting worker from a previous session
+        if (registration.waiting && navigator.serviceWorker.controller) {
+          waitingWorker = registration.waiting;
+          notifyUpdateListeners(true);
+        }
+
+        // 2. Listen for new worker installation
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (!newWorker) return;
+
+          newWorker.addEventListener('statechange', () => {
+            // Only notify if there is an active controller already (i.e. not first install)
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              waitingWorker = registration.waiting || newWorker;
+              notifyUpdateListeners(true);
+            }
+          });
+        });
+      })
+      .catch((error) => {
+        console.warn('Fuel ServiceWorker registration error:', error);
+      });
+
+    // 3. Listen for controllerchange to reload page when new worker takes over
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
+    });
+
+    // 4. Periodically check for updates (every 30 minutes)
+    setInterval(() => {
+      if (currentRegistration) {
+        currentRegistration.update().catch(() => {});
+      }
+    }, 30 * 60 * 1000);
+
+    // 5. Check when window regains visibility
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && currentRegistration) {
+        currentRegistration.update().catch(() => {});
+      }
+    });
+  });
+}
+
+export async function checkForAppUpdate(): Promise<{ hasUpdate: boolean; message: string }> {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+    return { hasUpdate: false, message: 'Service worker not supported in this environment.' };
+  }
+
+  if (isUpdateAvailableState && waitingWorker) {
+    return { hasUpdate: true, message: 'New update is already downloaded and ready to install!' };
+  }
+
+  if (!currentRegistration) {
+    return { hasUpdate: false, message: 'Service worker initializing...' };
+  }
+
+  try {
+    await currentRegistration.update();
+    if (currentRegistration.waiting && navigator.serviceWorker.controller) {
+      waitingWorker = currentRegistration.waiting;
+      notifyUpdateListeners(true);
+      return { hasUpdate: true, message: 'A new update is available and ready to install!' };
+    }
+    return { hasUpdate: false, message: 'Fuel is up to date with the latest features.' };
+  } catch (err) {
+    console.error('Error checking for PWA update', err);
+    return { hasUpdate: false, message: 'Could not connect to update server.' };
+  }
+}
+
+export function applyAppUpdate(): void {
+  if (waitingWorker) {
+    waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+  } else {
+    // Fallback if no waiting worker
+    window.location.reload();
+  }
+}
+
+export function triggerSimulatedUpdate(enable: boolean = true): void {
+  notifyUpdateListeners(enable);
+}
+

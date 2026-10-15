@@ -6,10 +6,14 @@ import { getSettings } from '../services/storage';
 interface CameraViewProps {
   onCancel: () => void;
   onScanComplete: (imageSrc: string, result: GeminiInferenceResult) => void;
+  onOpenManualLog?: () => void;
 }
 
-
-export const CameraView: React.FC<CameraViewProps> = ({ onCancel, onScanComplete }) => {
+export const CameraView: React.FC<CameraViewProps> = ({
+  onCancel,
+  onScanComplete,
+  onOpenManualLog,
+}) => {
   const [streamActive, setStreamActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [flashOn, setFlashOn] = useState(false);
@@ -296,6 +300,19 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCancel, onScanComplete
                 >
                   Open Device Camera
                 </button>
+                {onOpenManualLog && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      stopStream();
+                      onOpenManualLog();
+                    }}
+                    className="px-4 py-2 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-medium border border-white/10 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">edit_note</span>
+                    Log Meal Manually
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -369,6 +386,24 @@ export const CameraView: React.FC<CameraViewProps> = ({ onCancel, onScanComplete
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
+
+        {/* Alternative: Enter manually */}
+        {onOpenManualLog && (
+          <div className="flex justify-center pb-2">
+            <button
+              type="button"
+              onClick={() => {
+                stopStream();
+                onOpenManualLog();
+              }}
+              disabled={isAnalyzing}
+              className="text-white/85 hover:text-white text-xs font-medium flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md active:scale-95 transition-all border border-white/10 shadow-sm"
+            >
+              <span className="material-symbols-outlined text-[15px]">edit_note</span>
+              Can't snap photo? Enter manually
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

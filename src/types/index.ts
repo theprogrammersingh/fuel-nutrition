@@ -17,11 +17,15 @@ export interface MealEntry {
 }
 
 export type DietaryFocus = 'omnivore' | 'high_protein_veg' | 'pescatarian' | 'vegan' | 'keto';
+export type TargetGoal = 'lose_weight' | 'bulking' | 'maintain';
 
 export interface DailyGoals {
   calories: number;
   protein: number;
   dietaryFocus: DietaryFocus;
+  currentWeightKg: number;
+  targetGoal: TargetGoal;
+  lastGoalCheckInDate: string; // ISO date string e.g. "2026-10-15"
 }
 
 export interface ModelOption {

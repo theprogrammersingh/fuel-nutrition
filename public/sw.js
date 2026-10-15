@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fuel-pwa-v4';
+const CACHE_NAME = 'fuel-pwa-v5';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -12,7 +12,14 @@ self.addEventListener('install', (event) => {
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
-  self.skipWaiting();
+  // Do not automatically skip waiting; allow user prompt to trigger update
+});
+
+// Listen for skip waiting message from app update prompt
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', (event) => {

@@ -1,4 +1,4 @@
-import { DailyGoals, MealEntry, NudgeState } from '../types';
+import { DailyGoals, MealEntry, NudgeState, TargetGoal } from '../types';
 
 export function calculateMacroNudge(meals: MealEntry[], goals: DailyGoals): NudgeState {
   const todayStr = new Date().toISOString().split('T')[0];
@@ -13,28 +13,65 @@ export function calculateMacroNudge(meals: MealEntry[], goals: DailyGoals): Nudg
   const caloriePct = totalCalories / Math.max(1, goals.calories);
   const proteinPct = totalProtein / Math.max(1, goals.protein);
 
-  // Recommendations filtered by dietary preference
   const isVeg = goals.dietaryFocus === 'high_protein_veg' || goals.dietaryFocus === 'vegan';
   const isVegan = goals.dietaryFocus === 'vegan';
+  const targetGoal: TargetGoal = goals.targetGoal || 'maintain';
 
-  // Scenario C: Protein goal reached
+  // SCENARIO C: Protein goal reached
   if (totalProtein >= goals.protein) {
+    if (targetGoal === 'bulking') {
+      return {
+        scenario: 'C',
+        title: 'Protein Hit · Bulking Surplus',
+        message: `Muscle synthesis target reached (${totalProtein}g / ${goals.protein}g). Fill remaining ${remCalories} kcal with quality carbs and healthy fats for growth.`,
+        remainingCalories: remCalories,
+        remainingProtein: 0,
+        recommendations: isVegan
+          ? [
+              { name: 'Oatmeal with Almond Butter & Banana', calories: 340, protein: 9 },
+              { name: 'Avocado Toast on Sourdough', calories: 290, protein: 6 },
+              { name: 'Dark Chocolate & Mixed Walnuts (40g)', calories: 240, protein: 5 },
+            ]
+          : [
+              { name: 'Honey & Banana Whole Milk Greek Yogurt', calories: 260, protein: 12 },
+              { name: 'Avocado Toast with Olive Oil', calories: 280, protein: 6 },
+              { name: 'Peanut Butter Rice Cakes', calories: 220, protein: 8 },
+            ],
+      };
+    }
+
+    if (targetGoal === 'lose_weight') {
+      return {
+        scenario: 'C',
+        title: 'Protein Target Reached in Deficit',
+        message: `Optimal lean mass protection achieved (${totalProtein}g / ${goals.protein}g). Keep deficit intact with light, fibrous greens or hydration.`,
+        remainingCalories: remCalories,
+        remainingProtein: 0,
+        recommendations: [
+          { name: 'Crisp Cucumbers with Lemon & Hummus', calories: 90, protein: 3 },
+          { name: 'Baby Spinach & Cherry Tomato Salad', calories: 75, protein: 2 },
+          { name: 'Fresh Strawberries (150g)', calories: 50, protein: 1 },
+        ],
+      };
+    }
+
+    // Default maintain
     return {
       scenario: 'C',
       title: 'Protein Target Reached',
-      message: `Optimal protein hit (${totalProtein}g / ${goals.protein}g). Maintain energy balance with light, fibrous greens if needed.`,
+      message: `Optimal protein hit (${totalProtein}g / ${goals.protein}g). Maintain energy balance with balanced whole foods.`,
       remainingCalories: remCalories,
       remainingProtein: 0,
       recommendations: [
         { name: 'Mixed Baby Greens & Olive Oil', calories: 85, protein: 3 },
         { name: 'Crisp Cucumbers with Hummus', calories: 110, protein: 4 },
         { name: 'Fresh Blueberries (150g)', calories: 84, protein: 1 },
-      ]
+      ],
     };
   }
 
-  // Scenario A: Tight calorie window (< 35% calorie budget remaining) OR calorie progress outpaces protein by > 20%
-  const isLagging = (caloriePct - proteinPct) > 0.15 || (remCalories <= 500 && remProtein >= 30);
+  // SCENARIO A: Tight calorie window (< 35% calorie budget remaining) OR calorie progress outpaces protein by > 15%
+  const isLagging = (caloriePct - proteinPct) > 0.15 || (remCalories <= 500 && remProtein >= 25);
 
   if (isLagging) {
     let leanItems = [
@@ -60,42 +97,93 @@ export function calculateMacroNudge(meals: MealEntry[], goals: DailyGoals): Nudg
       ];
     }
 
+    const title = targetGoal === 'lose_weight'
+      ? 'Deficit Tight · Maximize Protein Purity'
+      : targetGoal === 'bulking'
+      ? 'Protein Deficit · Prioritize Pure Protein'
+      : 'Calorie Window Tight · Protein Deficit';
+
+    const message = targetGoal === 'lose_weight'
+      ? `Calorie budget is closing with ${remProtein}g protein remaining. Stick to ultra-lean sources to protect muscle without breaking deficit.`
+      : `Approaching daily energy limit while requiring ${remProtein}g protein. Prioritize high-purity protein sources.`;
+
     return {
       scenario: 'A',
-      title: 'Calorie window tight; protein deficit',
-      message: `Approaching daily energy limit while requiring ${remProtein}g protein. Avoid dense fats and sugar for remaining intake.`,
+      title,
+      message,
       remainingCalories: remCalories,
       remainingProtein: remProtein,
       recommendations: leanItems,
     };
   }
 
-  // Scenario B: Calorie budget open, protein needs density
+  // SCENARIO B: Calorie budget open, protein needs density
+  if (targetGoal === 'bulking') {
+    let bulkingItems = [
+      { name: 'Peanut Butter Banana Whey Shake', calories: 480, protein: 38 },
+      { name: 'Salmon with Sweet Potato & Quinoa', calories: 520, protein: 44 },
+      { name: 'Whole Eggs & Avocado on Sourdough', calories: 430, protein: 24 },
+      { name: 'Chicken Thigh Bowl with Rice & Beans', calories: 550, protein: 46 },
+    ];
+
+    if (isVegan) {
+      bulkingItems = [
+        { name: 'Hemp Seed & Peanut Butter Oats', calories: 460, protein: 28 },
+        { name: 'Tempeh & Avocado Quinoa Bowl', calories: 480, protein: 34 },
+        { name: 'Spiced Lentil Dahl with Rice & Nuts', calories: 440, protein: 24 },
+      ];
+    } else if (isVeg) {
+      bulkingItems = [
+        { name: 'Paneer Tikka with Paratha & Curd', calories: 520, protein: 30 },
+        { name: 'Greek Yogurt with Granola & Almonds', calories: 420, protein: 26 },
+        { name: 'Whole Eggs, Cheese & Toast', calories: 440, protein: 25 },
+      ];
+    }
+
+    return {
+      scenario: 'B',
+      title: 'Bulking Calorie Room · Fuel Muscle Growth',
+      message: `${remCalories} kcal budget available. Use high-density nutrient pairings to reach both your caloric surplus and ${goals.protein}g protein.`,
+      remainingCalories: remCalories,
+      remainingProtein: remProtein,
+      recommendations: bulkingItems,
+    };
+  }
+
+  // Standard or Lose Weight scenario B
   let denseItems = [
-    { name: 'Grilled Salmon Bowl', calories: 420, protein: 38 },
-    { name: 'Whole Eggs & Sourdough Toast', calories: 350, protein: 22 },
-    { name: 'Chicken Thigh with Quinoa', calories: 480, protein: 42 },
-    { name: 'Tofu Lentil Curry', calories: 380, protein: 24 },
+    { name: 'Grilled Salmon Bowl with Greens', calories: 380, protein: 36 },
+    { name: 'Grilled Chicken Breast & Veggies', calories: 320, protein: 40 },
+    { name: 'Whole Eggs & Sourdough Toast', calories: 330, protein: 21 },
+    { name: 'Tofu Lentil Curry with Steamed Veggies', calories: 340, protein: 24 },
   ];
 
   if (isVegan) {
     denseItems = [
-      { name: 'Tempeh Stir-Fry with Quinoa', calories: 410, protein: 31 },
-      { name: 'Lentil & Chickpea Dahl', calories: 360, protein: 22 },
-      { name: 'Hemp Seed Power Bowl', calories: 340, protein: 20 },
+      { name: 'Tempeh Stir-Fry with Greens', calories: 360, protein: 30 },
+      { name: 'Lentil & Chickpea Dahl', calories: 340, protein: 22 },
+      { name: 'Hemp Seed Power Bowl', calories: 320, protein: 20 },
     ];
   } else if (isVeg) {
     denseItems = [
-      { name: 'Paneer Tikka with Roti', calories: 420, protein: 26 },
-      { name: 'Greek Salad with Boiled Eggs', calories: 320, protein: 21 },
-      { name: 'Spiced Moong Daal with Rice', calories: 390, protein: 20 },
+      { name: 'Paneer Tikka with Mixed Salad', calories: 360, protein: 25 },
+      { name: 'Greek Salad with Boiled Eggs', calories: 310, protein: 21 },
+      { name: 'Spiced Moong Daal with Greens', calories: 330, protein: 20 },
     ];
   }
 
+  const title = targetGoal === 'lose_weight'
+    ? 'Deficit on Track · Satiating Protein Sources'
+    : 'Calorie Budget Open · Prioritize Balanced Protein';
+
+  const message = targetGoal === 'lose_weight'
+    ? `${remCalories} kcal remaining in today's deficit. Choose high-volume, lean protein to stay full while hitting your ${goals.protein}g target.`
+    : `${remCalories} kcal budget available. Ample room to hit target ${goals.protein}g with balanced protein-rich meals.`;
+
   return {
     scenario: 'B',
-    title: 'Calorie budget open; prioritize dense protein',
-    message: `${remCalories} kcal budget available. Ample room to hit target ${goals.protein}g with balanced protein-rich meals.`,
+    title,
+    message,
     remainingCalories: remCalories,
     remainingProtein: remProtein,
     recommendations: denseItems,

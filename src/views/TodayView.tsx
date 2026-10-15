@@ -10,7 +10,10 @@ interface TodayViewProps {
   onQuickLog: (item: RecommendationItem) => void;
   onDeleteMeal: (id: string) => void;
   onOpenScan: () => void;
+  onOpenManualLog?: () => void;
   onOpenInstallGuide?: () => void;
+  onOpenGoalCheckIn?: () => void;
+  isCheckInDue?: boolean;
 }
 
 export const TodayView: React.FC<TodayViewProps> = ({
@@ -20,9 +23,13 @@ export const TodayView: React.FC<TodayViewProps> = ({
   onQuickLog,
   onDeleteMeal,
   onOpenScan,
+  onOpenManualLog,
   onOpenInstallGuide,
+  onOpenGoalCheckIn,
+  isCheckInDue = false,
 }) => {
   const [bannerDismissed, setBannerDismissed] = React.useState(false);
+  const [checkInDismissed, setCheckInDismissed] = React.useState(false);
   const deviceInfo = getDeviceInfo();
   const todayStr = new Date().toISOString().split('T')[0];
   const todayMeals = meals.filter(m => m.date === todayStr);
@@ -59,6 +66,38 @@ export const TodayView: React.FC<TodayViewProps> = ({
           <span>{todayFormatted}</span>
         </div>
       </div>
+
+      {/* Bi-Weekly Progress Check-In Banner */}
+      {isCheckInDue && !checkInDismissed && onOpenGoalCheckIn && (
+        <div className="p-3.5 rounded-xl bg-accent-neutral-bar text-white shadow-md flex items-center justify-between gap-3 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[18px]">event_repeat</span>
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-semibold truncate">Bi-Weekly Goal Check-In</span>
+              <span className="text-[11px] text-white/80 truncate">
+                Recalibrate weight ({goals.currentWeightKg || 70}kg) & {goals.targetGoal === 'bulking' ? 'Bulking' : goals.targetGoal === 'lose_weight' ? 'Cutting' : 'Maintenance'} targets
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={onOpenGoalCheckIn}
+              className="px-2.5 py-1 rounded-lg bg-white text-zinc-900 text-[11px] font-semibold hover:bg-zinc-100 active:scale-95 transition-all shadow-xs"
+            >
+              Check In
+            </button>
+            <button
+              onClick={() => setCheckInDismissed(true)}
+              aria-label="Dismiss check-in reminder"
+              className="p-1 text-white/70 hover:text-white rounded"
+            >
+              <span className="material-symbols-outlined text-[16px]">close</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Install Fuel Prompt Banner (When running in browser) */}
       {!deviceInfo.isStandalone && !bannerDismissed && (
@@ -97,7 +136,12 @@ export const TodayView: React.FC<TodayViewProps> = ({
         {/* Daily Energy Header */}
         <div className="flex items-baseline justify-between">
           <div className="flex flex-col">
-            <span className="font-label-xs text-label-xs text-text-muted uppercase tracking-wider">Daily Energy</span>
+            <div className="flex items-center gap-1.5">
+              <span className="font-label-xs text-label-xs text-text-muted uppercase tracking-wider">Daily Energy</span>
+              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-subtle text-text-secondary uppercase">
+                {goals.targetGoal === 'bulking' ? 'Bulk' : goals.targetGoal === 'lose_weight' ? 'Cut' : 'Maintain'} · {goals.currentWeightKg || 70}kg
+              </span>
+            </div>
             <div className="flex items-baseline gap-1 mt-0.5">
               <span className="font-display-stat-mobile text-[34px] leading-tight font-semibold text-text-primary tracking-tight">
                 {totalCalories.toLocaleString()}
@@ -178,30 +222,53 @@ export const TodayView: React.FC<TodayViewProps> = ({
           <span className="font-label-xs text-label-xs text-text-muted uppercase tracking-wider">
             Today's Log ({todayMeals.length} {todayMeals.length === 1 ? 'item' : 'items'})
           </span>
-          <button
-            onClick={onOpenScan}
-            className="font-label-xs text-label-xs text-text-secondary hover:text-text-primary flex items-center gap-1 transition-colors"
-          >
-            <span className="material-symbols-outlined text-[15px]">add</span>
-            Log Meal
-          </button>
+          <div className="flex items-center gap-1.5">
+            {onOpenManualLog && (
+              <button
+                onClick={onOpenManualLog}
+                className="font-label-xs text-label-xs px-2.5 py-1 rounded-md bg-surface-subtle text-text-primary hover:bg-zinc-200 flex items-center gap-1 transition-colors font-medium border border-border-hairline shadow-2xs"
+              >
+                <span className="material-symbols-outlined text-[15px]">edit_note</span>
+                Manual
+              </button>
+            )}
+            <button
+              onClick={onOpenScan}
+              className="font-label-xs text-label-xs px-2.5 py-1 rounded-md bg-accent-neutral-bar text-white hover:bg-black flex items-center gap-1 transition-colors font-medium shadow-2xs"
+            >
+              <span className="material-symbols-outlined text-[15px]">photo_camera</span>
+              Scan
+            </button>
+          </div>
         </div>
 
         {todayMeals.length === 0 ? (
           <div className="bg-surface-card rounded-xl p-8 border border-border-hairline shadow-sm flex flex-col items-center justify-center text-center gap-2">
             <div className="w-12 h-12 rounded-full bg-surface-subtle flex items-center justify-center text-text-muted">
-              <span className="material-symbols-outlined text-[24px]">photo_camera</span>
+              <span className="material-symbols-outlined text-[24px]">restaurant</span>
             </div>
             <span className="font-headline-md text-headline-md text-text-primary">No meals logged yet today</span>
             <p className="font-body-md text-body-md text-text-secondary max-w-xs">
-              Snap a picture of your dish to estimate calories and protein in seconds.
+              Snap a picture or describe your meal to estimate calories and protein in seconds.
             </p>
-            <button
-              onClick={onOpenScan}
-              className="mt-2 px-4 py-2 bg-accent-neutral-bar text-white rounded-lg text-sm font-medium active:scale-95 transition-transform"
-            >
-              Scan First Meal
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+              <button
+                onClick={onOpenScan}
+                className="px-4 py-2 bg-accent-neutral-bar text-white rounded-lg text-sm font-medium active:scale-95 transition-transform flex items-center gap-1.5 shadow-xs"
+              >
+                <span className="material-symbols-outlined text-[18px]">photo_camera</span>
+                Scan Food Photo
+              </button>
+              {onOpenManualLog && (
+                <button
+                  onClick={onOpenManualLog}
+                  className="px-4 py-2 bg-surface-subtle hover:bg-zinc-200 text-text-primary border border-border-hairline rounded-lg text-sm font-medium active:scale-95 transition-transform flex items-center gap-1.5 shadow-xs"
+                >
+                  <span className="material-symbols-outlined text-[18px]">edit_note</span>
+                  Log Manually
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">

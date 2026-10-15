@@ -1,20 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GeminiInferenceResult, MealEntry, MealType } from '../types';
 
 interface ReviewViewProps {
   initialResult: GeminiInferenceResult | null;
   initialImage: string | null;
+  initialMealType?: MealType;
   onConfirmLog: (meal: MealEntry) => void;
   onCancel: () => void;
   onOpenScan?: () => void;
+  onOpenManualLog?: () => void;
 }
 
 export const ReviewView: React.FC<ReviewViewProps> = ({
   initialResult,
   initialImage,
+  initialMealType = 'lunch',
   onConfirmLog,
   onCancel,
   onOpenScan,
+  onOpenManualLog,
 }) => {
   if (!initialResult) {
     return (
@@ -24,14 +28,26 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
         </div>
         <h2 className="font-headline-lg text-lg font-semibold text-text-primary">No Meal to Review Yet</h2>
         <p className="font-body-md text-body-md text-text-secondary max-w-xs">
-          Take a photo of your meal or upload an image to analyze and review its nutritional breakdown.
+          Take a photo of your meal or describe it manually to generate and review its nutritional breakdown.
         </p>
-        <button
-          onClick={onOpenScan || onCancel}
-          className="mt-3 px-5 py-2.5 bg-accent-neutral-bar text-white rounded-xl text-sm font-medium active:scale-95 transition-transform shadow-xs"
-        >
-          Scan Food Photo
-        </button>
+        <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
+          <button
+            onClick={onOpenScan || onCancel}
+            className="px-4 py-2.5 bg-accent-neutral-bar text-white rounded-xl text-sm font-medium active:scale-95 transition-transform shadow-xs flex items-center gap-1.5"
+          >
+            <span className="material-symbols-outlined text-[18px]">photo_camera</span>
+            Scan Food Photo
+          </button>
+          {onOpenManualLog && (
+            <button
+              onClick={onOpenManualLog}
+              className="px-4 py-2.5 bg-surface-subtle hover:bg-zinc-200 text-text-primary border border-border-hairline rounded-xl text-sm font-medium active:scale-95 transition-transform shadow-xs flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-[18px]">edit_note</span>
+              Log Manually
+            </button>
+          )}
+        </div>
       </div>
     );
   }
@@ -40,7 +56,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
   const currentImage = initialImage || '';
 
   const [dishName, setDishName] = useState(currentResult.dish_name);
-  const [mealType, setMealType] = useState<MealType>('lunch');
+  const [mealType, setMealType] = useState<MealType>(initialMealType);
   const [portionMultiplier, setPortionMultiplier] = useState<number>(1.0);
   
   // Base raw values from inference
@@ -52,6 +68,21 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
   // Editable values
   const [calories, setCalories] = useState<number>(Math.round(baseCalories * portionMultiplier));
   const [protein, setProtein] = useState<number>(Math.round(baseProtein * portionMultiplier));
+
+  useEffect(() => {
+    if (initialResult) {
+      setDishName(initialResult.dish_name);
+      setPortionMultiplier(1.0);
+      setCalories(initialResult.calories);
+      setProtein(initialResult.protein);
+    }
+  }, [initialResult]);
+
+  useEffect(() => {
+    if (initialMealType) {
+      setMealType(initialMealType);
+    }
+  }, [initialMealType]);
 
   const handleMultiplierChange = (multiplier: number) => {
     setPortionMultiplier(multiplier);
@@ -115,7 +146,15 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
       <div className="bg-surface-card rounded-xl border border-border-hairline shadow-sm p-space-md flex flex-col gap-space-md">
         <div className="flex items-start gap-space-md">
           <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-surface-subtle shrink-0 border border-border-hairline">
-            <img src={currentImage} alt={dishName} className="w-full h-full object-cover" />
+            <img
+              src={currentImage}
+              alt={dishName}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src =
+                  'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=80';
+              }}
+            />
           </div>
           <div className="flex flex-col flex-1 min-w-0">
             <label className="font-label-xs text-label-xs text-text-muted uppercase tracking-wider mb-1">

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { DailyGoals, AppSettings, DietaryFocus } from '../types';
-import { AVAILABLE_MODELS, exportDataAsJson } from '../services/storage';
+import React, { useState, useEffect } from 'react';
+import { DailyGoals, AppSettings, DietaryFocus, TargetGoal } from '../types';
+import { AVAILABLE_MODELS, exportDataAsJson, calculateRecommendedMacros } from '../services/storage';
 import { testGeminiApiKey } from '../services/gemini';
 
-import { getDeviceInfo } from '../services/pwa';
+import { getDeviceInfo, checkForAppUpdate, isAppUpdateAvailable, triggerSimulatedUpdate } from '../services/pwa';
 
 interface SettingsViewProps {
   goals: DailyGoals;
@@ -15,6 +15,8 @@ interface SettingsViewProps {
   mealCount: number;
   onOpenInstallGuide: () => void;
   onOpenWelcomeFlow: () => void;
+  onOpenGoalCheckIn?: () => void;
+  onOpenUpdateModal?: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -27,11 +29,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   mealCount,
   onOpenInstallGuide,
   onOpenWelcomeFlow,
+  onOpenGoalCheckIn,
+  onOpenUpdateModal,
 }) => {
   const deviceInfo = getDeviceInfo();
   const [calorieTarget, setCalorieTarget] = useState(goals.calories);
   const [proteinTarget, setProteinTarget] = useState(goals.protein);
   const [dietaryFocus, setDietaryFocus] = useState<DietaryFocus>(goals.dietaryFocus);
+  const [weightKg, setWeightKg] = useState<number>(goals.currentWeightKg || 70);
+  const [targetGoal, setTargetGoal] = useState<TargetGoal>(goals.targetGoal || 'maintain');
+
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [updateStatusMessage, setUpdateStatusMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCalorieTarget(goals.calories);
+    setProteinTarget(goals.protein);
+    setDietaryFocus(goals.dietaryFocus);
+    setWeightKg(goals.currentWeightKg || 70);
+    setTargetGoal(goals.targetGoal || 'maintain');
+  }, [goals]);
 
   const [apiKey, setApiKey] = useState(settings.geminiApiKey);
   const [selectedModel, setSelectedModel] = useState(settings.selectedModel);
@@ -39,6 +56,33 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [isTestingKey, setIsTestingKey] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [savedNotification, setSavedNotification] = useState(false);
+
+  const handleWeightChange = (newWeight: number) => {
+    const safeW = Math.max(30, Math.min(250, newWeight));
+    setWeightKg(safeW);
+    onUpdateGoals({ ...goals, currentWeightKg: safeW });
+  };
+
+  const handleTargetGoalChange = (newGoal: TargetGoal) => {
+    setTargetGoal(newGoal);
+    onUpdateGoals({ ...goals, targetGoal: newGoal });
+  };
+
+  const handleAutoRecalculateMacros = () => {
+    const rec = calculateRecommendedMacros(weightKg, targetGoal);
+    setCalorieTarget(rec.calories);
+    setProteinTarget(rec.protein);
+    onUpdateGoals({
+      ...goals,
+      currentWeightKg: weightKg,
+      targetGoal: targetGoal,
+      calories: rec.calories,
+      protein: rec.protein,
+      lastGoalCheckInDate: new Date().toISOString(),
+    });
+    setSavedNotification(true);
+    setTimeout(() => setSavedNotification(false), 2000);
+  };
 
   const handleGoalCalorieChange = (delta: number) => {
     const val = Math.max(1000, Math.min(5000, calorieTarget + delta));
@@ -75,6 +119,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setTestResult(res);
   };
 
+  const handleCheckForUpdates = async () => {
+    setIsCheckingUpdate(true);
+    setUpdateStatusMessage(null);
+    const result = await checkForAppUpdate();
+    setIsCheckingUpdate(false);
+    setUpdateStatusMessage(result.message);
+    if (result.hasUpdate && onOpenUpdateModal) {
+      onOpenUpdateModal();
+    }
+  };
+
+  const handlePreviewUpdateModal = () => {
+    triggerSimulatedUpdate(true);
+    if (onOpenUpdateModal) {
+      onOpenUpdateModal();
+    }
+  };
+
   const handleDownloadExport = () => {
     const jsonStr = exportDataAsJson();
     const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -98,6 +160,98 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <span className="material-symbols-outlined text-[14px] icon-filled">bolt</span>
             Calibrated
           </span>
+        </div>
+
+        {/* Body Stats & Target Focus Card */}
+        <div className="p-space-lg rounded-xl bg-surface-card border border-border-hairline shadow-sm flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="font-headline-md text-sm font-semibold text-text-primary">
+                Body Stats & Target Focus
+              </span>
+              <span className="text-[11px] text-text-muted">
+                Drives your personalized macro targets & AI meal suggestions
+              </span>
+            </div>
+            {onOpenGoalCheckIn && (
+              <button
+                type="button"
+                onClick={onOpenGoalCheckIn}
+                className="px-2.5 py-1 rounded-lg bg-surface-subtle hover:bg-zinc-200 text-text-primary border border-border-hairline text-xs font-medium active:scale-95 transition-all flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-[14px]">event_repeat</span>
+                Check In
+              </button>
+            )}
+          </div>
+
+          {/* Current Weight Input */}
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="settings-weight" className="font-label-xs text-label-xs text-text-muted uppercase tracking-wider">
+              Current Body Weight
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                id="settings-weight"
+                type="number"
+                min={35}
+                max={250}
+                value={weightKg}
+                onChange={(e) => handleWeightChange(Number(e.target.value) || 70)}
+                className="w-28 bg-surface-subtle font-mono text-sm font-semibold px-3 py-2 rounded-lg border border-border-hairline focus:outline-hidden focus:border-zinc-500"
+              />
+              <span className="text-xs font-semibold text-text-primary">kg</span>
+              <span className="text-xs text-text-muted font-mono">
+                (~{Math.round(weightKg * 2.20462)} lbs)
+              </span>
+            </div>
+          </div>
+
+          {/* Target Goal Selector */}
+          <div className="flex flex-col gap-1.5">
+            <label className="font-label-xs text-label-xs text-text-muted uppercase tracking-wider">
+              Primary Goal Target
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'lose_weight' as TargetGoal, name: 'Lose Weight', subtitle: 'Deficit', icon: 'trending_down' },
+                { id: 'maintain' as TargetGoal, name: 'Maintain', subtitle: 'Balance', icon: 'balance' },
+                { id: 'bulking' as TargetGoal, name: 'Bulking', subtitle: 'Surplus', icon: 'trending_up' },
+              ].map((g) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => handleTargetGoalChange(g.id)}
+                  className={`p-2.5 rounded-xl border flex flex-col items-center justify-center text-center transition-all ${
+                    targetGoal === g.id
+                      ? 'bg-accent-neutral-bar text-white border-accent-neutral-bar shadow-xs'
+                      : 'bg-surface-subtle text-text-primary border-border-hairline hover:bg-zinc-100'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[18px] mb-0.5">{g.icon}</span>
+                  <span className="text-xs font-semibold">{g.name}</span>
+                  <span className={`text-[10px] font-mono mt-0.5 ${targetGoal === g.id ? 'text-zinc-300' : 'text-text-muted'}`}>
+                    {g.subtitle}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Auto-Calculate Action */}
+          <div className="pt-2 border-t border-border-hairline flex items-center justify-between">
+            <span className="text-[11px] text-text-muted">
+              Auto-calculate targets from weight & goal:
+            </span>
+            <button
+              type="button"
+              onClick={handleAutoRecalculateMacros}
+              className="px-3 py-1.5 rounded-lg bg-surface-subtle hover:bg-zinc-200 text-text-primary border border-border-hairline text-xs font-medium active:scale-95 transition-all flex items-center gap-1 shadow-2xs"
+            >
+              <span className="material-symbols-outlined text-[14px]">auto_fix_high</span>
+              Auto-Calculate
+            </button>
+          </div>
         </div>
 
         {/* Calorie Step Card */}
@@ -400,6 +554,65 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <span className="material-symbols-outlined text-[15px]">help_outline</span>
             <span>Replay Welcome Tour & Setup</span>
           </button>
+        </div>
+
+        {/* PWA App Version & Service Worker Updates */}
+        <div className="mt-2 pt-3 border-t border-border-hairline flex flex-col gap-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="font-label-xs text-xs font-semibold text-text-primary">
+                PWA Version & Updates
+              </span>
+              <span className="text-[11px] text-text-muted font-mono">
+                v1.2.0 · Cache: fuel-pwa-v5
+              </span>
+            </div>
+            {isAppUpdateAvailable() ? (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1 animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                Update Ready
+              </span>
+            ) : (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                Up to Date
+              </span>
+            )}
+          </div>
+
+          {updateStatusMessage && (
+            <div className="p-2 rounded-lg bg-surface-subtle border border-border-hairline text-[11px] text-text-primary flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[15px] text-accent-neutral-bar">info</span>
+              <span>{updateStatusMessage}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={handleCheckForUpdates}
+              disabled={isCheckingUpdate}
+              className="py-2 px-3 rounded-lg border border-border-hairline bg-surface-subtle hover:bg-zinc-100 text-text-primary text-xs font-medium flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer disabled:opacity-60"
+            >
+              {isCheckingUpdate ? (
+                <span className="material-symbols-outlined text-[15px] animate-spin">
+                  progress_activity
+                </span>
+              ) : (
+                <span className="material-symbols-outlined text-[15px]">sync</span>
+              )}
+              <span>{isCheckingUpdate ? 'Checking...' : 'Check Updates'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePreviewUpdateModal}
+              className="py-2 px-3 rounded-lg border border-border-hairline bg-surface-subtle hover:bg-zinc-100 text-text-secondary hover:text-text-primary text-xs font-medium flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[15px]">preview</span>
+              <span>Preview Pop-Up</span>
+            </button>
+          </div>
         </div>
       </section>
 

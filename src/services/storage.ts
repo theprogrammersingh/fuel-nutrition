@@ -1,4 +1,4 @@
-import { MealEntry, DailyGoals, AppSettings } from '../types';
+import { MealEntry, DailyGoals, AppSettings, TargetGoal } from '../types';
 
 const STORAGE_KEYS = {
   MEALS: 'fuel_meals_v1',
@@ -35,11 +35,53 @@ export const AVAILABLE_MODELS = [
   },
 ];
 
+export function calculateRecommendedMacros(weightKg: number, goal: TargetGoal): { calories: number; protein: number } {
+  const safeWeight = Math.max(30, Math.min(250, Number(weightKg) || 70));
+  
+  if (goal === 'bulking') {
+    return {
+      calories: Math.round(safeWeight * 33),
+      protein: Math.round(safeWeight * 2.0),
+    };
+  } else if (goal === 'lose_weight') {
+    return {
+      calories: Math.round(safeWeight * 24),
+      protein: Math.round(safeWeight * 2.2), // Higher protein ratio preserves lean mass in a calorie deficit
+    };
+  } else {
+    // maintain
+    return {
+      calories: Math.round(safeWeight * 28),
+      protein: Math.round(safeWeight * 1.8),
+    };
+  }
+}
+
 export const DEFAULT_GOALS: DailyGoals = {
   calories: 2000,
   protein: 140,
   dietaryFocus: 'omnivore',
+  currentWeightKg: 70,
+  targetGoal: 'maintain',
+  lastGoalCheckInDate: new Date().toISOString(),
 };
+
+export function isBiWeeklyCheckInDue(goals: DailyGoals): boolean {
+  if (!goals.lastGoalCheckInDate) return false;
+  const lastDate = new Date(goals.lastGoalCheckInDate).getTime();
+  if (isNaN(lastDate)) return false;
+  const diffDays = (Date.now() - lastDate) / (1000 * 60 * 60 * 24);
+  return diffDays >= 14;
+}
+
+export function updateGoalCheckInDate(goals: DailyGoals): DailyGoals {
+  const updated: DailyGoals = {
+    ...goals,
+    lastGoalCheckInDate: new Date().toISOString(),
+  };
+  saveGoals(updated);
+  return updated;
+}
 
 export const DEFAULT_SETTINGS: AppSettings = {
   geminiApiKey: (import.meta as any).env?.VITE_GEMINI_API_KEY || '',
@@ -96,7 +138,14 @@ export function getGoals(): DailyGoals {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.GOALS);
     if (!raw) return DEFAULT_GOALS;
-    return { ...DEFAULT_GOALS, ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw);
+    return {
+      ...DEFAULT_GOALS,
+      ...parsed,
+      currentWeightKg: Number(parsed.currentWeightKg) || DEFAULT_GOALS.currentWeightKg,
+      targetGoal: parsed.targetGoal || DEFAULT_GOALS.targetGoal,
+      lastGoalCheckInDate: parsed.lastGoalCheckInDate || DEFAULT_GOALS.lastGoalCheckInDate,
+    };
   } catch {
     return DEFAULT_GOALS;
   }

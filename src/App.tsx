@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ActiveTab, MealEntry, GeminiInferenceResult, RecommendationItem } from './types';
+import { ActiveTab, MealEntry, GeminiInferenceResult, RecommendationItem, MealType, DailyGoals } from './types';
 import {
   getMeals,
   addMeal,
@@ -12,6 +12,7 @@ import {
   clearAllData,
   isOnboarded,
   setOnboarded,
+  isBiWeeklyCheckInDue,
 } from './services/storage';
 import { calculateMacroNudge } from './services/recommendations';
 import { Header } from './components/Header';
@@ -19,6 +20,10 @@ import { BottomNav } from './components/BottomNav';
 import { Toast } from './components/Toast';
 import { WelcomeFlowModal } from './components/WelcomeFlowModal';
 import { InstallModal } from './components/InstallModal';
+import { ManualLogModal } from './components/ManualLogModal';
+import { GoalCheckInModal } from './components/GoalCheckInModal';
+import { UpdateModal } from './components/UpdateModal';
+import { subscribeToAppUpdate, applyAppUpdate } from './services/pwa';
 import { TodayView } from './views/TodayView';
 import { CameraView } from './views/CameraView';
 import { ReviewView } from './views/ReviewView';
@@ -33,6 +38,10 @@ export const App: React.FC = () => {
   // Welcome flow & Install modal state
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(() => !isOnboarded());
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+  const [isManualLogOpen, setIsManualLogOpen] = useState(false);
+  const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [reviewMealType, setReviewMealType] = useState<MealType>('lunch');
 
   // Scanned item staged for Review
   const [scannedImage, setScannedImage] = useState<string | null>(null);
@@ -42,12 +51,23 @@ export const App: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [lastDeletedMeal, setLastDeletedMeal] = useState<MealEntry | null>(null);
 
-  // Live Macro Nudge Engine State
+  // Live Macro Nudge Engine State & Bi-weekly Check-in condition
   const nudge = calculateMacroNudge(meals, goals);
+  const checkInDue = isBiWeeklyCheckInDue(goals);
 
   // Sync state across reloads / tabs
   useEffect(() => {
     setMeals(getMeals());
+  }, []);
+
+  // Listen for PWA service worker updates
+  useEffect(() => {
+    const unsubscribe = subscribeToAppUpdate((hasUpdate) => {
+      if (hasUpdate) {
+        setIsUpdateModalOpen(true);
+      }
+    });
+    return unsubscribe;
   }, []);
 
   const handleQuickLog = (item: RecommendationItem) => {
@@ -98,7 +118,21 @@ export const App: React.FC = () => {
   const handleScanComplete = (imageSrc: string, result: GeminiInferenceResult) => {
     setScannedImage(imageSrc);
     setScannedResult(result);
+    setReviewMealType('lunch');
     setActiveTab('review');
+  };
+
+  const handleManualLogGenerated = (
+    imageSrc: string,
+    result: GeminiInferenceResult,
+    mealType: MealType
+  ) => {
+    setScannedImage(imageSrc);
+    setScannedResult(result);
+    setReviewMealType(mealType);
+    setIsManualLogOpen(false);
+    setActiveTab('review');
+    setToastMessage(`Gemini estimated: ${result.dish_name} (${result.calories} kcal · ${result.protein}g Pro)`);
   };
 
   const handleConfirmLogFromReview = (newMeal: MealEntry) => {
@@ -121,7 +155,7 @@ export const App: React.FC = () => {
     setToastMessage("Reset today's meals");
   };
 
-  const handleWelcomeComplete = (newApiKey: string, newModel: string) => {
+  const handleWelcomeComplete = (newApiKey: string, newModel: string, newGoals?: DailyGoals) => {
     const updated = {
       ...settings,
       geminiApiKey: newApiKey,
@@ -129,9 +163,15 @@ export const App: React.FC = () => {
     };
     setSettings(updated);
     saveSettings(updated);
+
+    if (newGoals) {
+      setGoals(newGoals);
+      saveGoals(newGoals);
+    }
+
     setOnboarded(true);
     setIsWelcomeOpen(false);
-    setToastMessage('Welcome to Fuel! Ready to track your first meal.');
+    setToastMessage('Welcome to Fuel! Profile and goals calibrated.');
   };
 
   const handleClearAll = () => {
@@ -165,7 +205,10 @@ export const App: React.FC = () => {
             onQuickLog={handleQuickLog}
             onDeleteMeal={handleDeleteMeal}
             onOpenScan={() => setActiveTab('scan')}
+            onOpenManualLog={() => setIsManualLogOpen(true)}
             onOpenInstallGuide={() => setIsInstallModalOpen(true)}
+            onOpenGoalCheckIn={() => setIsCheckInModalOpen(true)}
+            isCheckInDue={checkInDue}
           />
         )}
 
@@ -173,6 +216,10 @@ export const App: React.FC = () => {
           <CameraView
             onCancel={() => setActiveTab('today')}
             onScanComplete={handleScanComplete}
+            onOpenManualLog={() => {
+              setActiveTab('today');
+              setIsManualLogOpen(true);
+            }}
           />
         )}
 
@@ -180,9 +227,11 @@ export const App: React.FC = () => {
           <ReviewView
             initialResult={scannedResult}
             initialImage={scannedImage}
+            initialMealType={reviewMealType}
             onConfirmLog={handleConfirmLogFromReview}
             onCancel={() => setActiveTab('today')}
             onOpenScan={() => setActiveTab('scan')}
+            onOpenManualLog={() => setIsManualLogOpen(true)}
           />
         )}
 
@@ -203,6 +252,8 @@ export const App: React.FC = () => {
             mealCount={meals.length}
             onOpenInstallGuide={() => setIsInstallModalOpen(true)}
             onOpenWelcomeFlow={() => setIsWelcomeOpen(true)}
+            onOpenGoalCheckIn={() => setIsCheckInModalOpen(true)}
+            onOpenUpdateModal={() => setIsUpdateModalOpen(true)}
           />
         )}
       </main>
@@ -219,6 +270,7 @@ export const App: React.FC = () => {
         isOpen={isWelcomeOpen}
         initialApiKey={settings.geminiApiKey}
         initialModel={settings.selectedModel}
+        initialGoals={goals}
         onComplete={handleWelcomeComplete}
         onDismiss={() => {
           setOnboarded(true);
@@ -232,16 +284,64 @@ export const App: React.FC = () => {
         onClose={() => setIsInstallModalOpen(false)}
       />
 
-      {/* Floating Action Button (FAB) for Camera Scan - Hovers on the right */}
+      {/* PWA App Update Notification Pop-up Modal */}
+      <UpdateModal
+        isOpen={isUpdateModalOpen}
+        onUpdate={applyAppUpdate}
+        onClose={() => setIsUpdateModalOpen(false)}
+      />
+
+      {/* Manual Meal Logging Modal */}
+      <ManualLogModal
+        isOpen={isManualLogOpen}
+        onClose={() => setIsManualLogOpen(false)}
+        onPayloadGenerated={handleManualLogGenerated}
+        onOpenSettings={() => {
+          setIsManualLogOpen(false);
+          setActiveTab('settings');
+        }}
+      />
+
+      {/* Bi-Weekly Progress Check-In Modal */}
+      <GoalCheckInModal
+        isOpen={isCheckInModalOpen}
+        goals={goals}
+        onSaveGoals={(updatedGoals) => {
+          setGoals(updatedGoals);
+          saveGoals(updatedGoals);
+          setToastMessage('Calibrated weight and targets for the next 2 weeks');
+        }}
+        onSnooze={() => {
+          setIsCheckInModalOpen(false);
+          const twoDaysFromNow = new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString();
+          const snoozed = { ...goals, lastGoalCheckInDate: twoDaysFromNow };
+          setGoals(snoozed);
+          saveGoals(snoozed);
+          setToastMessage('Check-in snoozed for 2 days');
+        }}
+        onClose={() => setIsCheckInModalOpen(false)}
+      />
+
+      {/* Floating Action Buttons for Manual Log & Camera Scan */}
       {activeTab !== 'scan' && (
         <aside
-          aria-label="Quick scan action"
-          className="fixed bottom-20 inset-x-0 max-w-lg mx-auto px-4 flex justify-end pointer-events-none z-40 pb-safe"
+          aria-label="Quick meal logging actions"
+          className="fixed bottom-20 inset-x-0 max-w-lg mx-auto px-4 flex justify-end items-center gap-2.5 pointer-events-none z-40 pb-safe"
         >
+          <button
+            onClick={() => setIsManualLogOpen(true)}
+            aria-label="Log meal manually"
+            title="Log meal manually"
+            className="pointer-events-auto h-12 px-3.5 rounded-full bg-surface-card border border-border-hairline text-text-primary flex items-center gap-1.5 shadow-[0px_4px_16px_rgba(0,0,0,0.12)] hover:bg-surface-subtle active:scale-95 transition-all text-xs font-semibold cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[19px] text-accent-neutral-bar">edit_note</span>
+            <span>Manual</span>
+          </button>
           <button
             onClick={() => setActiveTab('scan')}
             aria-label="Scan food photo"
-            className="pointer-events-auto w-14 h-14 rounded-full bg-accent-neutral-bar text-white flex items-center justify-center shadow-[0px_6px_20px_rgba(9,9,11,0.28)] hover:shadow-2xl active:scale-95 transition-all hover:bg-black focus:outline-hidden"
+            title="Scan food photo"
+            className="pointer-events-auto w-14 h-14 rounded-full bg-accent-neutral-bar text-white flex items-center justify-center shadow-[0px_6px_20px_rgba(9,9,11,0.28)] hover:shadow-2xl active:scale-95 transition-all hover:bg-black focus:outline-hidden cursor-pointer"
           >
             <span className="material-symbols-outlined text-[26px]">photo_camera</span>
           </button>
